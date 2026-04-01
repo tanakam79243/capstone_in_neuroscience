@@ -397,6 +397,14 @@ function projectPoint(point, width, height) {
   return { x: width / 2 + point.x * perspective, y: height / 2 + point.y * perspective, depth: point.z };
 }
 
+function residueToSegmentIndex(residuePosition, segmentCount) {
+  if (segmentCount <= 1 || sequence.length <= 1) {
+    return 0;
+  }
+  const normalized = (clamp(residuePosition, 1, sequence.length) - 1) / (sequence.length - 1);
+  return Math.max(0, Math.min(segmentCount - 1, Math.round(normalized * (segmentCount - 1))));
+}
+
 function initViewer() {
   viewerCanvas = document.createElement("canvas");
   refs.viewer3d.innerHTML = "";
@@ -619,6 +627,10 @@ function renderViewerFrame(timeMs) {
   const transformed = generateProteinGeometry(time)
     .map((point) => ({ ...point, ...projectPoint(rotatePoint(point, yaw + time * 0.12, pitch), width, height) }))
     .sort((a, b) => a.depth - b.depth);
+  const hotspotStartIndex = residueToSegmentIndex(hotspotRange[0], transformed.length);
+  const hotspotEndIndex = residueToSegmentIndex(hotspotRange[1], transformed.length);
+  const hotspotMidIndex = residueToSegmentIndex(Math.round((hotspotRange[0] + hotspotRange[1]) / 2), transformed.length);
+  const tailIndex = residueToSegmentIndex(tailRange[1], transformed.length);
 
   viewerCtx.save();
   viewerCtx.lineCap = "round";
@@ -654,7 +666,12 @@ function renderViewerFrame(timeMs) {
   viewerCtx.shadowBlur = 0;
 
   transformed.forEach((point, index) => {
-    const isAnchor = index === 0 || index === transformed.length - 1 || index === hotspotRange[0] - 1 || index === hotspotRange[1] - 1;
+    const isAnchor =
+      index === 0 ||
+      index === transformed.length - 1 ||
+      index === hotspotStartIndex ||
+      index === hotspotEndIndex ||
+      index === tailIndex;
     if (!isAnchor) {
       return;
     }
@@ -681,8 +698,8 @@ function renderViewerFrame(timeMs) {
   viewerCtx.beginPath();
   viewerCtx.ellipse(width * 0.5, height * 0.8, width * 0.18, height * 0.04, 0, 0, Math.PI * 2);
   viewerCtx.fill();
-  drawLabel(transformed[Math.max(0, Math.floor((hotspotRange[0] + hotspotRange[1]) / 2) - 1)].x + 14, transformed[Math.max(0, Math.floor((hotspotRange[0] + hotspotRange[1]) / 2) - 1)].y - 10, protein.hotspotLabel, "#d69b2d");
-  drawLabel(transformed[transformed.length - 1].x - 120, transformed[transformed.length - 1].y - 8, protein.tailLabel, "#cb6b63");
+  drawLabel(transformed[hotspotMidIndex].x + 14, transformed[hotspotMidIndex].y - 10, protein.hotspotLabel, "#d69b2d");
+  drawLabel(transformed[tailIndex].x - 120, transformed[tailIndex].y - 8, protein.tailLabel, "#cb6b63");
   drawLabel(width * 0.5 + 18, height * 0.73 - 12, componentProfiles[state.component].label, componentProfiles[state.component].color);
   viewerCtx.restore();
   frameId = requestAnimationFrame(renderViewerFrame);
