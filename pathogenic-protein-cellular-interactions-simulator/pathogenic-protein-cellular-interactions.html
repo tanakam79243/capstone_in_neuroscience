@@ -33,14 +33,8 @@
           <h2 id="sequenceHeading">Sequence Overview</h2>
           <span class="badge" id="sequenceBadge">Hydrophobic hotspot highlighted</span>
         </div>
-        <div class="sequence-scale">
-          <span>1</span>
-          <span>10</span>
-          <span>20</span>
-          <span>30</span>
-          <span>42</span>
-        </div>
-        <div class="sequence" id="sequenceTrack" aria-label="Amyloid beta sequence"></div>
+        <div class="sequence-scale" id="sequenceScale"></div>
+        <div class="sequence" id="sequenceTrack" aria-label="Protein sequence"></div>
       </section>
 
       <section class="panel controls-panel">
@@ -48,9 +42,40 @@
           <h2>Simulation Controls</h2>
           <button id="resetBtn" type="button">Reset Scenario</button>
         </div>
+
+        <section class="import-panel">
+          <div>
+            <p class="import-kicker">Easy Protein Switching</p>
+            <h3>Load a different pathogenic protein</h3>
+            <p class="import-copy">
+              Choose a built-in example or upload a filled-out JSON profile. The simulator updates immediately in the browser.
+            </p>
+          </div>
+          <div class="import-grid">
+            <label>
+              Built-in example
+              <div class="inline-controls">
+                <select id="exampleSelect">
+                  <option value="abeta42">Aβ42</option>
+                  <option value="alpha_synuclein">Alpha-synuclein</option>
+                  <option value="tau_4r">Tau 4R repeat region</option>
+                </select>
+                <button id="loadExampleBtn" type="button">Load Example</button>
+              </div>
+            </label>
+            <label>
+              Upload protein JSON
+              <input id="configUpload" type="file" accept=".json,application/json" />
+            </label>
+          </div>
+          <p class="import-status" id="importStatus">
+            Default Aβ42 profile loaded. You can switch proteins without editing code.
+          </p>
+        </section>
+
         <div class="controls-grid">
           <label>
-            Amyloid assembly
+            Assembly state
             <select id="assemblySelect">
               <option value="monomer">Monomeric peptide</option>
               <option value="oligomer" selected>Soluble oligomer</option>
@@ -93,25 +118,13 @@
       <section class="dashboard">
         <section class="panel map-panel">
           <h2>Predicted Contact Map</h2>
-          <canvas
-            id="contactMap"
-            width="420"
-            height="420"
-            aria-label="Predicted contact map for amyloid residues"
-          ></canvas>
+          <canvas id="contactMap" width="420" height="420" aria-label="Predicted contact map"></canvas>
           <div class="legend">
             <span><i class="swatch low"></i> Low contact propensity</span>
             <span><i class="swatch mid"></i> Moderate</span>
             <span><i class="swatch high"></i> High</span>
           </div>
-          <p class="map-explainer">
-            This heatmap compares each amyloid residue against every other residue.
-            Darker regions suggest parts of the peptide that are more likely to sit
-            near one another or participate in the same interaction surface in this
-            simplified model. The diagonal is each residue matched to itself, while
-            brighter off-diagonal blocks can hint at folding, clustering, or exposed
-            pathogenic contact zones.
-          </p>
+          <p class="map-explainer" id="mapExplainer"></p>
         </section>
 
         <section class="panel viewer-panel">
@@ -119,18 +132,11 @@
             <h2>3D Interaction Viewer</h2>
             <span class="badge">Drag to orbit</span>
           </div>
-          <div id="viewer3d" class="viewer3d" aria-label="3D amyloid viewer"></div>
+          <div id="viewer3d" class="viewer3d" aria-label="3D protein viewer"></div>
           <p class="viewer-caption">
-            Blue to amber shading marks increasing disorder and exposure. The
-            highlighted target object changes with the selected cellular component.
+            Blue to amber shading marks increasing disorder and exposure. The highlighted target object changes with the selected cellular component.
           </p>
-          <p class="speed-note">
-            Motion speed in this viewer is illustrative, not physical. Faster
-            drift represents a more dynamically engaged interaction state in the
-            teaching model, while slower motion can suggest partial docking or a
-            more stabilized contact state. It should not be interpreted as a real
-            molecular diffusion or binding rate.
-          </p>
+          <p class="speed-note" id="speedNote"></p>
           <div id="annotationGrid" class="annotation-grid"></div>
         </section>
 

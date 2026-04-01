@@ -1,0 +1,29 @@
+{
+  "protein": {
+    "key": "tau_4r",
+    "displayName": "Tau 4R repeat region",
+    "heroTitle": "Pathogenic Protein Interaction Simulator",
+    "introName": "Explore a simplified 3D model of tau repeat region aggregates",
+    "sequenceHeading": "Tau Repeat Region Overview",
+    "sequenceBadge": "Microtubule-binding repeat hotspot highlighted",
+    "sequence": "VQIINKKLDLSNVQSKCGSKDNIKHVPGGGSVQIVYKPVDLSKVTSKCGSLGNIHHKPGGGQVEVKSEKLDFKDRVQSKIGSLDNITHVPGGGNKKIETHKLTFRENAKAKTDHGAEIVYKSPVVSGDTSPRHLSNVSSTGSIDMVDSPQLATLADEVSASLAKQGL",
+    "hotspotRange": [8, 40],
+    "hotspotLabel": "Repeat-region aggregation hotspot",
+    "tailRange": [141, 174],
+    "tailLabel": "Flexible regulatory tail",
+    "contactMapExplanation": "This heatmap compares tau repeat-region residues against one another. Darker regions suggest segments that may form aggregation interfaces or compact interaction surfaces in this simplified model.",
+    "speedExplanation": "Motion speed in this viewer is illustrative and helps distinguish diffuse, docking, and stabilized interaction states. It is not a measured physical transport rate."
+  },
+  "assemblies": {
+    "monomer": { "label": "Monomeric tau fragment", "lengthFactor": 1, "aggregation": 0.22, "toxicity": 0.24, "speed": 0.78, "segments": 26 },
+    "oligomer": { "label": "Tau oligomer", "lengthFactor": 1.22, "aggregation": 0.72, "toxicity": 0.81, "speed": 0.98, "segments": 36 },
+    "protofibril": { "label": "Tau protofibril", "lengthFactor": 1.58, "aggregation": 0.95, "toxicity": 0.93, "speed": 1.05, "segments": 44 }
+  },
+  "components": {
+    "membrane": { "label": "Plasma membrane", "color": "#7bb6c9", "affinity": 0.52, "vulnerabilityBoost": 0.48, "densityBoost": 0.25, "narrative": "Membrane engagement is shown as a secondary interaction route rather than the primary destination for this tau-centered model." },
+    "receptor": { "label": "Synaptic receptor cluster", "color": "#d6864e", "affinity": 0.46, "vulnerabilityBoost": 0.22, "densityBoost": 1, "narrative": "The model allows synaptic disruption but keeps receptor clustering as a secondary effect." },
+    "mitochondria": { "label": "Mitochondrion", "color": "#87a95e", "affinity": 0.58, "vulnerabilityBoost": 0.56, "densityBoost": 0.2, "narrative": "Mitochondrial stress is present as a downstream consequence, especially in more toxic oligomeric states." },
+    "lysosome": { "label": "Lysosome", "color": "#b87393", "affinity": 0.68, "vulnerabilityBoost": 0.55, "densityBoost": 0.15, "narrative": "Clearance overload is highlighted because persistent tau assemblies can accumulate when degradative pathways are strained." },
+    "tau": { "label": "Tau-rich microtubules", "color": "#5f88d8", "affinity": 0.9, "vulnerabilityBoost": 0.85, "densityBoost": 0.5, "narrative": "This model centers on self-association near tau-rich microtubule structures, emphasizing repeat-mediated packing and cytoskeletal destabilization." }
+  }
+}

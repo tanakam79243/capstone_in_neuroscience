@@ -1,0 +1,29 @@
+{
+  "protein": {
+    "key": "alpha_synuclein",
+    "displayName": "Alpha-synuclein",
+    "heroTitle": "Pathogenic Protein Interaction Simulator",
+    "introName": "Explore a simplified 3D model of alpha-synuclein",
+    "sequenceHeading": "Alpha-synuclein Sequence Overview",
+    "sequenceBadge": "NAC interaction region highlighted",
+    "sequence": "MDVFMKGLSKAKEGVVAAAEKTKQGVAEAAGKTKEGVLYVGSKTKEGVVHGVATVAEKTKEQVTNVGGAVVTGVTAVAQKTVEGAGSIAAATGFVKKDQLGKNEEGAPQEGILEDMPVDPDNEAYEMPSEEGYQDYEPEA",
+    "hotspotRange": [61, 95],
+    "hotspotLabel": "NAC aggregation-prone core",
+    "tailRange": [96, 140],
+    "tailLabel": "Acidic disordered tail",
+    "contactMapExplanation": "This heatmap compares each alpha-synuclein residue against every other residue. Darker regions suggest sequence segments that may cluster together or contribute to the same interaction surface in this simplified model.",
+    "speedExplanation": "Motion speed in this viewer is illustrative, not physical. Faster drift reflects a more dynamically engaged interaction state, while slower drift can suggest partial docking or stabilized contact."
+  },
+  "assemblies": {
+    "monomer": { "label": "Monomeric protein", "lengthFactor": 0.95, "aggregation": 0.28, "toxicity": 0.32, "speed": 0.82, "segments": 24 },
+    "oligomer": { "label": "Soluble oligomer", "lengthFactor": 1.18, "aggregation": 0.76, "toxicity": 0.84, "speed": 1.02, "segments": 34 },
+    "protofibril": { "label": "Protofibril", "lengthFactor": 1.55, "aggregation": 0.94, "toxicity": 0.95, "speed": 1.08, "segments": 42 }
+  },
+  "components": {
+    "membrane": { "label": "Plasma membrane", "color": "#7bb6c9", "affinity": 0.8, "vulnerabilityBoost": 0.9, "densityBoost": 0.25, "narrative": "The model emphasizes membrane association through amphipathic regions, increasing the chance of altered curvature, vesicle stress, and abnormal surface binding." },
+    "receptor": { "label": "Synaptic receptor cluster", "color": "#d6864e", "affinity": 0.55, "vulnerabilityBoost": 0.25, "densityBoost": 1, "narrative": "The assembly can linger in receptor-rich zones, potentially disrupting synaptic signaling and trafficking in this educational model." },
+    "mitochondria": { "label": "Mitochondrion", "color": "#87a95e", "affinity": 0.86, "vulnerabilityBoost": 0.82, "densityBoost": 0.2, "narrative": "The model shifts toward mitochondrial stress, with stronger emphasis on oxidative injury, outer-membrane perturbation, and energetic failure." },
+    "lysosome": { "label": "Lysosome", "color": "#b87393", "affinity": 0.74, "vulnerabilityBoost": 0.62, "densityBoost": 0.15, "narrative": "Aggregation-prone species may burden degradative pathways and increase the chance of proteostasis collapse." },
+    "tau": { "label": "Tau-rich microtubules", "color": "#5f88d8", "affinity": 0.42, "vulnerabilityBoost": 0.2, "densityBoost": 0.25, "narrative": "Cross-talk with tau is shown as a secondary pathway rather than the dominant interaction route." }
+  }
+}

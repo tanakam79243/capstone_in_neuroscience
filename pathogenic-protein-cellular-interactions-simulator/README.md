@@ -1,57 +1,36 @@
 # Pathogenic Protein Interaction Simulator
 
-A lightweight static prototype for exploring how a configurable pathogenic protein might interact with different cellular components in an educational 3D interface.
+A lightweight browser-based simulator for exploring how a configurable pathogenic protein may interact with membranes, receptor clusters, mitochondria, lysosomes, and tau-rich structures.
 
 ## Quick Start
 
-1. Download or clone this folder.
+1. Keep all files together in the same folder.
 2. Open `pathogenic-protein-cellular-interactions.html` in a browser.
-3. If the page does not load correctly, try opening the folder in a different browser such as Chrome or Safari.
-4. To explore a different pathogenic protein, edit `pathogenic-protein-cellular-interactions.config.js` or give `pathogenic-protein-ai-template.json` to an AI and ask it to generate a new config file.
+3. Use the built-in example loader or upload a JSON file to switch proteins.
 
-## Suggested repo contents
+## Main files
 
-- `README.md`: project overview and usage instructions
 - `pathogenic-protein-cellular-interactions.html`: main browser entrypoint
-- `pathogenic-protein-cellular-interactions.app.js`: rendering, interaction, and simulation logic
+- `pathogenic-protein-cellular-interactions.app.js`: simulation and rendering logic
 - `pathogenic-protein-cellular-interactions.styles.css`: visual styling
-- `pathogenic-protein-cellular-interactions.config.js`: AI-editable protein definition file
-- `pathogenic-protein-ai-template.json`: AI prompt/output template for creating new protein interaction profiles
+- `pathogenic-protein-cellular-interactions.config.js`: default protein profile loaded on page start
+- `pathogenic-protein-ai-template.json`: AI template users can fill out and upload
 
-## What it includes
+## Easy protein switching
 
-- AlphaFold-inspired layout with sequence strip, confidence legend, contact map, and large 3D viewer
-- Interactive controls for assembly state, target component, pathogenicity, oxidative stress, vulnerability, and receptor density
-- Simplified heuristic scoring for exposure, binding likelihood, disruption index, and confidence
-- Guided configuration file for swapping in a different protein without editing the main simulator logic
-- Canvas-based ribbon-style scene showing protein motion relative to membranes, receptors, mitochondria, lysosomes, or tau-rich structures
+Users can change the protein in two simple ways:
 
-## Main customization file
+1. Choose a built-in example from the page and click `Load Example`
+2. Upload a JSON file from:
+   - `examples/alpha-synuclein.profile.json`
+   - `examples/tau-4r.profile.json`
+   - a completed version of `pathogenic-protein-ai-template.json`
 
-- [pathogenic-protein-cellular-interactions.config.js](/Users/tanakamanhede/Documents/Playground/pathogenic-protein-cellular-interactions-simulator/pathogenic-protein-cellular-interactions.config.js): the AI-editable file where you define the protein name, sequence, hotspot, disordered tail, explanatory text, and assembly/component settings
+The page accepts:
 
-## AI template file
+- direct simulator profile JSON shaped like `{ protein, assemblies, components }`
+- completed AI template JSON shaped like the provided template file
 
-- [pathogenic-protein-ai-template.json](/Users/tanakamanhede/Documents/Playground/pathogenic-protein-cellular-interactions-simulator/pathogenic-protein-ai-template.json): a structured template that users can hand to an AI to generate a new protein profile for this simulator
+## Notes
 
-## AI workflow
-
-Ask any AI to modify only [pathogenic-protein-cellular-interactions.config.js](/Users/tanakamanhede/Documents/Playground/pathogenic-protein-cellular-interactions-simulator/pathogenic-protein-cellular-interactions.config.js) and keep the same object shape.
-
-Example prompt:
-
-```text
-Create a new pathogenic-protein-cellular-interactions.config.js for alpha-synuclein. Keep the same field names, update the sequence, set the NAC region as the hotspot, use a disordered C-terminal tail, and make the mitochondria narrative more prominent.
-
-Or provide the JSON in `pathogenic-protein-ai-template.json` to an AI and ask it to return a completed profile plus a matching JavaScript config file.
-```
-
-## Important scope note
-
-This is a concept simulator for teaching, communication, and UI prototyping. It is **not** a molecular dynamics engine and should not be used as a scientific prediction tool.
-
-## Run it
-
-Open [/Users/tanakamanhede/Documents/Playground/pathogenic-protein-cellular-interactions-simulator/pathogenic-protein-cellular-interactions.html](/Users/tanakamanhede/Documents/Playground/pathogenic-protein-cellular-interactions-simulator/pathogenic-protein-cellular-interactions.html) in a browser.
-
-If the page does not appear correctly, open the project in another browser and make sure all files stay together in the same folder.
+This simulator is educational and conceptual. It is not a molecular dynamics or clinically validated prediction tool.
