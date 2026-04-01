@@ -6,7 +6,7 @@ The following repository contains select assingments
 ________________________________________________________________
 ### AI Assignment (Summary 4) 
 
-The following assingment poses a viable option for an assingment:
+The following poses a viable option for an assingment:
 
 1. Pathogenic_Protein_Interaction_Simulator
 
