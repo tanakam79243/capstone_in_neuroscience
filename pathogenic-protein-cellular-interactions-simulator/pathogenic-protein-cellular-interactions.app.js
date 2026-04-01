@@ -728,15 +728,23 @@ function handleUploadedFile(file) {
   reader.readAsText(file);
 }
 
+function loadExampleProfile(exampleKey) {
+  const example = exampleProfiles[exampleKey];
+  if (!example) {
+    setImportStatus("That example profile was not found.", true);
+    return;
+  }
+  updateActiveConfig(example);
+  setImportStatus(`Loaded built-in example: ${example.protein.displayName}.`);
+}
+
 function attachEvents() {
+  refs.exampleSelect.addEventListener("change", (event) => {
+    loadExampleProfile(event.target.value);
+  });
+
   refs.loadExampleBtn.addEventListener("click", () => {
-    const example = exampleProfiles[refs.exampleSelect.value];
-    if (!example) {
-      setImportStatus("That example profile was not found.", true);
-      return;
-    }
-    updateActiveConfig(example);
-    setImportStatus(`Loaded built-in example: ${example.protein.displayName}.`);
+    loadExampleProfile(refs.exampleSelect.value);
   });
 
   refs.configUpload.addEventListener("change", (event) => {
