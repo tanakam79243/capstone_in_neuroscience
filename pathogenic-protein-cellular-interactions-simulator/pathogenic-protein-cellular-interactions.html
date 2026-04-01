@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pathogenic Protein Interaction Simulator</title>
+    <link rel="stylesheet" href="pathogenic-protein-cellular-interactions.styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Explorable Research Demo</p>
+          <h1 id="appTitle">Pathogenic Protein Interaction Simulator</h1>
+          <p class="intro">
+            <span id="introProteinName">Explore a simplified 3D model of a pathogenic protein</span>
+            as it approaches membranes, receptors, lysosomes, mitochondria, and tau-rich
+            cytoskeletal regions. The controls update an educational risk model,
+            contact map, and live interaction narrative.
+          </p>
+        </div>
+        <div class="hero-note">
+          <p class="hero-note-title">Important</p>
+          <p>
+            This is a concept simulator for teaching and prototyping. It is not
+            a validated biophysical or clinical model.
+          </p>
+        </div>
+      </section>
+
+      <section class="panel sequence-panel">
+        <div class="panel-header">
+          <h2 id="sequenceHeading">Sequence Overview</h2>
+          <span class="badge" id="sequenceBadge">Hydrophobic hotspot highlighted</span>
+        </div>
+        <div class="sequence-scale">
+          <span>1</span>
+          <span>10</span>
+          <span>20</span>
+          <span>30</span>
+          <span>42</span>
+        </div>
+        <div class="sequence" id="sequenceTrack" aria-label="Amyloid beta sequence"></div>
+      </section>
+
+      <section class="panel controls-panel">
+        <div class="panel-header">
+          <h2>Simulation Controls</h2>
+          <button id="resetBtn" type="button">Reset Scenario</button>
+        </div>
+        <div class="controls-grid">
+          <label>
+            Amyloid assembly
+            <select id="assemblySelect">
+              <option value="monomer">Monomeric peptide</option>
+              <option value="oligomer" selected>Soluble oligomer</option>
+              <option value="protofibril">Protofibril</option>
+            </select>
+          </label>
+          <label>
+            Target component
+            <select id="componentSelect">
+              <option value="membrane" selected>Plasma membrane</option>
+              <option value="receptor">Synaptic receptor cluster</option>
+              <option value="mitochondria">Mitochondrion</option>
+              <option value="lysosome">Lysosome</option>
+              <option value="tau">Tau-rich microtubules</option>
+            </select>
+          </label>
+          <label>
+            Pathogenicity index
+            <input id="pathogenicityRange" type="range" min="0" max="100" value="68" />
+            <span class="range-value" id="pathogenicityValue">68</span>
+          </label>
+          <label>
+            Oxidative stress
+            <input id="stressRange" type="range" min="0" max="100" value="54" />
+            <span class="range-value" id="stressValue">54</span>
+          </label>
+          <label>
+            Membrane vulnerability
+            <input id="vulnerabilityRange" type="range" min="0" max="100" value="62" />
+            <span class="range-value" id="vulnerabilityValue">62</span>
+          </label>
+          <label>
+            Receptor density
+            <input id="densityRange" type="range" min="0" max="100" value="48" />
+            <span class="range-value" id="densityValue">48</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="dashboard">
+        <section class="panel map-panel">
+          <h2>Predicted Contact Map</h2>
+          <canvas
+            id="contactMap"
+            width="420"
+            height="420"
+            aria-label="Predicted contact map for amyloid residues"
+          ></canvas>
+          <div class="legend">
+            <span><i class="swatch low"></i> Low contact propensity</span>
+            <span><i class="swatch mid"></i> Moderate</span>
+            <span><i class="swatch high"></i> High</span>
+          </div>
+          <p class="map-explainer">
+            This heatmap compares each amyloid residue against every other residue.
+            Darker regions suggest parts of the peptide that are more likely to sit
+            near one another or participate in the same interaction surface in this
+            simplified model. The diagonal is each residue matched to itself, while
+            brighter off-diagonal blocks can hint at folding, clustering, or exposed
+            pathogenic contact zones.
+          </p>
+        </section>
+
+        <section class="panel viewer-panel">
+          <div class="panel-header">
+            <h2>3D Interaction Viewer</h2>
+            <span class="badge">Drag to orbit</span>
+          </div>
+          <div id="viewer3d" class="viewer3d" aria-label="3D amyloid viewer"></div>
+          <p class="viewer-caption">
+            Blue to amber shading marks increasing disorder and exposure. The
+            highlighted target object changes with the selected cellular component.
+          </p>
+          <p class="speed-note">
+            Motion speed in this viewer is illustrative, not physical. Faster
+            drift represents a more dynamically engaged interaction state in the
+            teaching model, while slower motion can suggest partial docking or a
+            more stabilized contact state. It should not be interpreted as a real
+            molecular diffusion or binding rate.
+          </p>
+          <div id="annotationGrid" class="annotation-grid"></div>
+        </section>
+
+        <aside class="panel info-panel">
+          <h2>Interaction Readout</h2>
+          <div class="summary-stack" id="summaryStack"></div>
+          <div class="confidence-card">
+            <h3>Model Confidence</h3>
+            <ul class="confidence-list">
+              <li><span class="confidence-dot very-high"></span> Stable core</li>
+              <li><span class="confidence-dot high"></span> Structured shell</li>
+              <li><span class="confidence-dot low"></span> Flexible interface</li>
+              <li><span class="confidence-dot very-low"></span> Disordered tail</li>
+            </ul>
+          </div>
+          <div class="narrative-card">
+            <h3>Mechanistic Narrative</h3>
+            <p id="narrativeText"></p>
+          </div>
+        </aside>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Event Timeline</h2>
+          <span class="badge">Updates live</span>
+        </div>
+        <div id="timeline" class="timeline"></div>
+      </section>
+    </main>
+
+    <script src="pathogenic-protein-cellular-interactions.config.js" defer></script>
+    <script src="pathogenic-protein-cellular-interactions.app.js" defer></script>
+  </body>
+</html>

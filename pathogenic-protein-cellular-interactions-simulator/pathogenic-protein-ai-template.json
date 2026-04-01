@@ -1,0 +1,113 @@
+{
+  "template_version": "1.0",
+  "purpose": "Fill this JSON and give it to an AI so it can generate a new pathogenic-protein-cellular-interactions.config.js file for the simulator.",
+  "instructions_for_ai": [
+    "Use this JSON as the source of truth.",
+    "Return a complete JavaScript config file that assigns the final object to window.PROTEIN_SIM_CONFIG.",
+    "Preserve the same high-level shape used by the simulator: protein, assemblies, and components.",
+    "Keep values educational and clearly non-clinical unless validated sources are provided separately."
+  ],
+  "protein_request": {
+    "protein_common_name": "Alpha-synuclein",
+    "protein_key": "alpha_synuclein",
+    "display_name": "Alpha-synuclein",
+    "sequence": "",
+    "sequence_heading": "Alpha-synuclein Sequence Overview",
+    "sequence_badge": "Aggregation-prone region highlighted",
+    "hotspot_range": [61, 95],
+    "hotspot_label": "Aggregation-prone interaction region",
+    "tail_range": [96, 140],
+    "tail_label": "Disordered tail region",
+    "hero_title": "Pathogenic Protein Cellular Interactions Simulator",
+    "intro_name": "Explore a simplified 3D model of alpha-synuclein",
+    "contact_map_explanation": "Explain what the contact map suggests for this protein in simple language.",
+    "speed_explanation": "Explain that motion speed is illustrative rather than a physical rate constant."
+  },
+  "interaction_focus": {
+    "primary_target_component": "mitochondria",
+    "secondary_target_components": ["membrane", "lysosome"],
+    "desired_teaching_emphasis": [
+      "organelle stress",
+      "membrane engagement",
+      "aggregation-prone regions"
+    ],
+    "notes": "Favor a mitochondria-centered narrative for this protein."
+  },
+  "assembly_preferences": {
+    "monomer": {
+      "label": "Monomeric protein",
+      "lengthFactor": 0.9,
+      "aggregation": 0.25,
+      "toxicity": 0.3,
+      "speed": 0.75,
+      "segments": 24
+    },
+    "oligomer": {
+      "label": "Soluble oligomer",
+      "lengthFactor": 1.15,
+      "aggregation": 0.7,
+      "toxicity": 0.82,
+      "speed": 1,
+      "segments": 32
+    },
+    "protofibril": {
+      "label": "Protofibril",
+      "lengthFactor": 1.45,
+      "aggregation": 0.92,
+      "toxicity": 0.94,
+      "speed": 1.08,
+      "segments": 40
+    }
+  },
+  "component_overrides": {
+    "membrane": {
+      "label": "Plasma membrane",
+      "color": "#7bb6c9",
+      "affinity": 0.75,
+      "vulnerabilityBoost": 0.95,
+      "densityBoost": 0.25,
+      "narrative": "Describe how this protein engages the plasma membrane."
+    },
+    "receptor": {
+      "label": "Synaptic receptor cluster",
+      "color": "#d6864e",
+      "affinity": 0.58,
+      "vulnerabilityBoost": 0.3,
+      "densityBoost": 1,
+      "narrative": "Describe how this protein affects receptor-rich zones."
+    },
+    "mitochondria": {
+      "label": "Mitochondrion",
+      "color": "#87a95e",
+      "affinity": 0.86,
+      "vulnerabilityBoost": 0.82,
+      "densityBoost": 0.2,
+      "narrative": "Describe how this protein contributes to mitochondrial stress or dysfunction."
+    },
+    "lysosome": {
+      "label": "Lysosome",
+      "color": "#b87393",
+      "affinity": 0.7,
+      "vulnerabilityBoost": 0.62,
+      "densityBoost": 0.15,
+      "narrative": "Describe how this protein burdens clearance pathways."
+    },
+    "tau": {
+      "label": "Tau-rich microtubules",
+      "color": "#5f88d8",
+      "affinity": 0.4,
+      "vulnerabilityBoost": 0.2,
+      "densityBoost": 0.25,
+      "narrative": "Describe whether cross-talk with tau is relevant for this protein."
+    }
+  },
+  "output_request": {
+    "return_format": "javascript_config_file",
+    "target_filename": "pathogenic-protein-cellular-interactions.config.js",
+    "also_include": [
+      "short rationale for hotspot choice",
+      "short rationale for tail choice",
+      "one-paragraph explanation of component affinity choices"
+    ]
+  }
+}
