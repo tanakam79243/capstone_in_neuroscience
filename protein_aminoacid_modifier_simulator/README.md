@@ -17,7 +17,7 @@ A single-file HTML workspace for uploading, editing, and comparing amino-acid se
 
 ## Open it
 
-Open [index.html](/Users/tanakamanhede/Documents/Playground/als-sequence-editor/index.html) directly in a browser, or launch it from Visual Studio Code with Live Server.
+Open [protein_modifier_simulator.html](/Users/tanakamanhede/Documents/GitHub/capstone_in_neuroscience/protein_aminoacid_modifier_simulator/protein_modifier_simulator.html) directly in a browser, or launch it from Visual Studio Code with Live Server.
 
 ## Suggested workflow
 

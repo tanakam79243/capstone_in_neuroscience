@@ -163,7 +163,7 @@ let tailRange = protein.tailRange;
 let assemblyProfiles = config.assemblies;
 let componentProfiles = config.components;
 
-const defaults = { assembly: "oligomer", component: "membrane", pathogenicity: 68, stress: 54, vulnerability: 62, density: 48 };
+const defaults = { assembly: "oligomer", component: "membrane", pathogenicity: 68, stress: 54, vulnerability: 62, density: 48, showRGroups: true };
 const state = { ...defaults };
 
 const refs = {
@@ -195,7 +195,33 @@ const refs = {
   timeline: document.getElementById("timeline"),
   annotationGrid: document.getElementById("annotationGrid"),
   contactMap: document.getElementById("contactMap"),
-  viewer3d: document.getElementById("viewer3d")
+  viewer3d: document.getElementById("viewer3d"),
+  viewerCaption: document.querySelector(".viewer-caption"),
+  rGroupToggle: document.getElementById("rGroupToggle")
+};
+
+const sidechainProfiles = {
+  A: { atoms: 1, length: 0.32, spread: 0.08, color: "#d8b56b" },
+  C: { atoms: 1, length: 0.35, spread: 0.1, color: "#d6c773" },
+  D: { atoms: 2, length: 0.48, spread: 0.18, color: "#c86862" },
+  E: { atoms: 3, length: 0.56, spread: 0.18, color: "#c86862" },
+  F: { atoms: 3, length: 0.52, spread: 0.16, color: "#8d6ac8" },
+  G: { atoms: 0, length: 0, spread: 0, color: "#d9e2e7" },
+  H: { atoms: 3, length: 0.48, spread: 0.16, color: "#6a8fd1" },
+  I: { atoms: 2, length: 0.48, spread: 0.2, color: "#c89d58" },
+  K: { atoms: 4, length: 0.66, spread: 0.15, color: "#52aa86" },
+  L: { atoms: 2, length: 0.5, spread: 0.18, color: "#c89d58" },
+  M: { atoms: 3, length: 0.54, spread: 0.14, color: "#bea267" },
+  N: { atoms: 2, length: 0.46, spread: 0.15, color: "#5ca8c4" },
+  P: { atoms: 2, length: 0.38, spread: 0.2, color: "#9d8f65" },
+  Q: { atoms: 3, length: 0.54, spread: 0.16, color: "#5ca8c4" },
+  R: { atoms: 4, length: 0.72, spread: 0.16, color: "#3f9a73" },
+  S: { atoms: 1, length: 0.34, spread: 0.12, color: "#63adc7" },
+  T: { atoms: 2, length: 0.4, spread: 0.16, color: "#63adc7" },
+  V: { atoms: 2, length: 0.4, spread: 0.22, color: "#d0a35d" },
+  W: { atoms: 4, length: 0.6, spread: 0.14, color: "#725ab1" },
+  Y: { atoms: 3, length: 0.54, spread: 0.16, color: "#8670c1" },
+  X: { atoms: 2, length: 0.44, spread: 0.16, color: "#8ca4b0" }
 };
 
 const mapCtx = refs.contactMap.getContext("2d");
@@ -205,10 +231,25 @@ let frameId;
 let dragState = null;
 let yaw = 0.45;
 let pitch = -0.2;
+let roll = 0;
 
 function setImportStatus(message, isError = false) {
   refs.importStatus.textContent = message;
   refs.importStatus.style.color = isError ? "#8f2d18" : "#073c51";
+}
+
+function normalizeAngle(angle) {
+  const fullTurn = Math.PI * 2;
+  if (!Number.isFinite(angle)) {
+    return 0;
+  }
+  angle %= fullTurn;
+  if (angle > Math.PI) {
+    angle -= fullTurn;
+  } else if (angle < -Math.PI) {
+    angle += fullTurn;
+  }
+  return angle;
 }
 
 function applyProteinContent() {
@@ -218,6 +259,15 @@ function applyProteinContent() {
   refs.sequenceBadge.textContent = protein.sequenceBadge;
   refs.mapExplainer.textContent = protein.contactMapExplanation;
   refs.speedNote.textContent = protein.speedExplanation;
+}
+
+function updateViewerCaption() {
+  if (!refs.viewerCaption) {
+    return;
+  }
+  refs.viewerCaption.textContent = state.showRGroups
+    ? "Blue to amber shading marks increasing disorder and exposure. The highlighted target object changes with the selected cellular component, and the ball-and-stick sidechains approximate amino-acid R-groups."
+    : "Blue to amber shading marks increasing disorder and exposure. The highlighted target object changes with the selected cellular component. Turn R-groups back on to see approximate ball-and-stick sidechains.";
 }
 
 function renderSequenceScale() {
@@ -362,6 +412,35 @@ function mixColor(a, b, t) {
   return `rgb(${Math.round(lerp(colorA.r, colorB.r, t))} ${Math.round(lerp(colorA.g, colorB.g, t))} ${Math.round(lerp(colorA.b, colorB.b, t))})`;
 }
 
+function addVector(a, b) {
+  return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z };
+}
+
+function subtractVector(a, b) {
+  return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z };
+}
+
+function scaleVector(vector, factor) {
+  return { x: vector.x * factor, y: vector.y * factor, z: vector.z * factor };
+}
+
+function normalizeVector(vector) {
+  const length = Math.hypot(vector.x, vector.y, vector.z) || 1;
+  return { x: vector.x / length, y: vector.y / length, z: vector.z / length };
+}
+
+function crossVector(a, b) {
+  return {
+    x: a.y * b.z - a.z * b.y,
+    y: a.z * b.x - a.x * b.z,
+    z: a.x * b.y - a.y * b.x
+  };
+}
+
+function getSidechainProfile(residue) {
+  return sidechainProfiles[residue] || sidechainProfiles.X;
+}
+
 function generateProteinGeometry(time) {
   const assembly = assemblyProfiles[state.assembly];
   const metrics = getModelMetrics();
@@ -381,6 +460,75 @@ function generateProteinGeometry(time) {
   return points;
 }
 
+function buildRGroupGeometry(backbonePoints, time) {
+  if (!state.showRGroups) {
+    return { atoms: [], bonds: [] };
+  }
+
+  const atoms = [];
+  const bonds = [];
+
+  backbonePoints.forEach((point, index) => {
+    const residueIndex = Math.round((index / Math.max(1, backbonePoints.length - 1)) * (sequence.length - 1));
+    const residue = sequence[residueIndex] || "X";
+    const profile = getSidechainProfile(residue);
+
+    if (!profile.atoms) {
+      return;
+    }
+
+    const previous = backbonePoints[Math.max(0, index - 1)];
+    const next = backbonePoints[Math.min(backbonePoints.length - 1, index + 1)];
+    const tangent = normalizeVector(subtractVector(next, previous));
+    const helperAxis = Math.abs(tangent.y) > 0.82 ? { x: 1, y: 0, z: 0 } : { x: 0, y: 1, z: 0 };
+    let normal = normalizeVector(crossVector(tangent, helperAxis));
+
+    if (!Number.isFinite(normal.x) || !Number.isFinite(normal.y) || !Number.isFinite(normal.z)) {
+      normal = { x: 1, y: 0, z: 0 };
+    }
+
+    const binormal = normalizeVector(crossVector(tangent, normal));
+    let previousAtomPoint = point;
+
+    for (let atomIndex = 0; atomIndex < profile.atoms; atomIndex += 1) {
+      const direction = normalizeVector(
+        addVector(
+          scaleVector(normal, index % 2 === 0 ? 1 : -1),
+          scaleVector(
+            binormal,
+            (atomIndex - (profile.atoms - 1) / 2) * profile.spread +
+              Math.sin(time * 0.9 + index * 0.55 + atomIndex) * 0.12
+          )
+        )
+      );
+
+      const distance = 0.46 + (profile.length * (atomIndex + 1)) / Math.max(1, profile.atoms);
+      const wobble = addVector(
+        scaleVector(binormal, Math.sin(time + index * 0.4 + atomIndex) * profile.spread * 0.18),
+        scaleVector(normal, Math.cos(time * 0.7 + index + atomIndex) * 0.05)
+      );
+      const atomPoint = addVector(point, addVector(scaleVector(direction, distance), wobble));
+      const atom = {
+        x: atomPoint.x,
+        y: atomPoint.y,
+        z: atomPoint.z,
+        radius: 0.08 + (profile.atoms - atomIndex) * 0.016,
+        color: profile.color
+      };
+
+      atoms.push(atom);
+      bonds.push({
+        start: previousAtomPoint,
+        end: atomPoint,
+        color: profile.color
+      });
+      previousAtomPoint = atomPoint;
+    }
+  });
+
+  return { atoms, bonds };
+}
+
 function rotatePoint(point, localYaw, localPitch) {
   const cosY = Math.cos(localYaw);
   const sinY = Math.sin(localYaw);
@@ -388,13 +536,29 @@ function rotatePoint(point, localYaw, localPitch) {
   const sinP = Math.sin(localPitch);
   const xzX = point.x * cosY - point.z * sinY;
   const xzZ = point.x * sinY + point.z * cosY;
-  return { x: xzX, y: point.y * cosP - xzZ * sinP, z: point.y * sinP + xzZ * cosP };
+  const pitched = {
+    x: xzX,
+    y: point.y * cosP - xzZ * sinP,
+    z: point.y * sinP + xzZ * cosP
+  };
+  const cosR = Math.cos(roll);
+  const sinR = Math.sin(roll);
+  return {
+    x: pitched.x * cosR - pitched.y * sinR,
+    y: pitched.x * sinR + pitched.y * cosR,
+    z: pitched.z
+  };
 }
 
 function projectPoint(point, width, height) {
   const cameraDistance = 9.5;
   const perspective = 300 / (cameraDistance - point.z);
-  return { x: width / 2 + point.x * perspective, y: height / 2 + point.y * perspective, depth: point.z };
+  return {
+    x: width / 2 + point.x * perspective,
+    y: height / 2 + point.y * perspective,
+    depth: point.z,
+    scale: perspective / 120
+  };
 }
 
 function residueToSegmentIndex(residuePosition, segmentCount) {
@@ -413,21 +577,40 @@ function initViewer() {
   resizeViewer();
   window.addEventListener("resize", resizeViewer);
   viewerCanvas.addEventListener("pointerdown", (event) => {
-    dragState = { x: event.clientX, y: event.clientY };
+    dragState = {
+      x: event.clientX,
+      y: event.clientY,
+      mode: event.shiftKey ? "roll" : "orbit"
+    };
     viewerCanvas.setPointerCapture(event.pointerId);
   });
   viewerCanvas.addEventListener("pointermove", (event) => {
     if (!dragState) {
       return;
     }
-    yaw += (event.clientX - dragState.x) * 0.01;
-    pitch = clamp(pitch + (event.clientY - dragState.y) * 0.008, -1.1, 0.75);
-    dragState = { x: event.clientX, y: event.clientY };
+    const dx = event.clientX - dragState.x;
+    const dy = event.clientY - dragState.y;
+
+    if (dragState.mode === "roll") {
+      roll = normalizeAngle(roll + (dx + dy) * 0.008);
+    } else {
+      yaw = normalizeAngle(yaw + dx * 0.01);
+      pitch = normalizeAngle(pitch + dy * 0.008);
+    }
+
+    dragState = {
+      x: event.clientX,
+      y: event.clientY,
+      mode: event.shiftKey ? "roll" : dragState.mode
+    };
   });
   viewerCanvas.addEventListener("pointerup", () => {
     dragState = null;
   });
   viewerCanvas.addEventListener("pointerleave", () => {
+    dragState = null;
+  });
+  viewerCanvas.addEventListener("pointercancel", () => {
     dragState = null;
   });
 }
@@ -459,6 +642,223 @@ function drawBackground(width, height) {
   floorGlow.addColorStop(1, "rgba(124, 180, 190, 0)");
   viewerCtx.fillStyle = floorGlow;
   viewerCtx.fillRect(0, height * 0.52, width, height * 0.48);
+
+  viewerCtx.save();
+  viewerCtx.strokeStyle = "rgba(86, 118, 126, 0.08)";
+  viewerCtx.lineWidth = 1;
+  for (let index = 1; index <= 5; index += 1) {
+    const y = height * (0.18 + index * 0.11);
+    viewerCtx.beginPath();
+    viewerCtx.moveTo(width * 0.08, y);
+    viewerCtx.lineTo(width * 0.92, y);
+    viewerCtx.stroke();
+  }
+  viewerCtx.restore();
+}
+
+function drawChainPath(points) {
+  viewerCtx.beginPath();
+  viewerCtx.moveTo(points[0].x, points[0].y);
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const current = points[index];
+    const next = points[index + 1];
+    viewerCtx.quadraticCurveTo(current.x, current.y, (current.x + next.x) / 2, (current.y + next.y) / 2);
+  }
+}
+
+function drawPhospholipidBilayer(centerX, centerY, width, time) {
+  const halfWidth = width / 2;
+  const headSpacing = 26;
+  const headRadius = 8.5;
+  const topY = centerY - 18;
+  const bottomY = centerY + 18;
+  const tailTopY = centerY - 7;
+  const tailBottomY = centerY + 7;
+
+  const coreGradient = viewerCtx.createLinearGradient(centerX, centerY - 26, centerX, centerY + 26);
+  coreGradient.addColorStop(0, "rgba(173, 219, 234, 0.45)");
+  coreGradient.addColorStop(0.28, "rgba(90, 152, 176, 0.9)");
+  coreGradient.addColorStop(0.5, "rgba(56, 108, 126, 0.96)");
+  coreGradient.addColorStop(0.72, "rgba(90, 152, 176, 0.9)");
+  coreGradient.addColorStop(1, "rgba(173, 219, 234, 0.45)");
+
+  viewerCtx.save();
+  viewerCtx.fillStyle = coreGradient;
+  viewerCtx.strokeStyle = "rgba(56, 108, 126, 0.82)";
+  viewerCtx.lineWidth = 2;
+  viewerCtx.beginPath();
+  viewerCtx.roundRect(centerX - halfWidth, centerY - 27, width, 54, 24);
+  viewerCtx.fill();
+  viewerCtx.stroke();
+
+  for (let x = centerX - halfWidth + 18; x <= centerX + halfWidth - 18; x += headSpacing) {
+    const phase = Math.sin(time * 0.8 + x * 0.04) * 1.6;
+    const topHeadGradient = viewerCtx.createRadialGradient(x - 2, topY - 2 + phase, 2, x, topY + phase, headRadius + 2);
+    topHeadGradient.addColorStop(0, "rgba(255,255,255,0.96)");
+    topHeadGradient.addColorStop(0.35, "rgba(196, 236, 245, 0.98)");
+    topHeadGradient.addColorStop(1, "rgba(94, 157, 183, 0.98)");
+    viewerCtx.fillStyle = topHeadGradient;
+    viewerCtx.beginPath();
+    viewerCtx.arc(x, topY + phase, headRadius, 0, Math.PI * 2);
+    viewerCtx.fill();
+
+    const bottomHeadGradient = viewerCtx.createRadialGradient(x - 2, bottomY - 2 - phase, 2, x, bottomY - phase, headRadius + 2);
+    bottomHeadGradient.addColorStop(0, "rgba(255,255,255,0.96)");
+    bottomHeadGradient.addColorStop(0.35, "rgba(196, 236, 245, 0.98)");
+    bottomHeadGradient.addColorStop(1, "rgba(94, 157, 183, 0.98)");
+    viewerCtx.fillStyle = bottomHeadGradient;
+    viewerCtx.beginPath();
+    viewerCtx.arc(x, bottomY - phase, headRadius, 0, Math.PI * 2);
+    viewerCtx.fill();
+
+    viewerCtx.strokeStyle = "rgba(241, 248, 214, 0.72)";
+    viewerCtx.lineWidth = 1.8;
+    viewerCtx.beginPath();
+    viewerCtx.moveTo(x - 4, topY + phase + headRadius - 1);
+    viewerCtx.quadraticCurveTo(x - 8, centerY - 1, x - 5, tailBottomY + Math.sin(time + x * 0.03) * 2);
+    viewerCtx.moveTo(x + 4, topY + phase + headRadius - 1);
+    viewerCtx.quadraticCurveTo(x + 8, centerY - 2, x + 5, tailBottomY + Math.cos(time * 0.9 + x * 0.04) * 2);
+    viewerCtx.moveTo(x - 4, bottomY - phase - headRadius + 1);
+    viewerCtx.quadraticCurveTo(x - 8, centerY + 1, x - 5, tailTopY + Math.cos(time + x * 0.03) * 2);
+    viewerCtx.moveTo(x + 4, bottomY - phase - headRadius + 1);
+    viewerCtx.quadraticCurveTo(x + 8, centerY + 2, x + 5, tailTopY + Math.sin(time * 0.9 + x * 0.04) * 2);
+    viewerCtx.stroke();
+  }
+
+  viewerCtx.strokeStyle = "rgba(255,255,255,0.4)";
+  viewerCtx.lineWidth = 1.2;
+  viewerCtx.beginPath();
+  viewerCtx.moveTo(centerX - halfWidth + 16, centerY - 2);
+  viewerCtx.lineTo(centerX + halfWidth - 16, centerY - 2);
+  viewerCtx.moveTo(centerX - halfWidth + 16, centerY + 2);
+  viewerCtx.lineTo(centerX + halfWidth - 16, centerY + 2);
+  viewerCtx.stroke();
+  drawMembraneMicroFeatures(centerX, centerY, width, time);
+  viewerCtx.restore();
+}
+
+function drawMembraneProtein(x, centerY, height, width, tilt, time, palette) {
+  const topY = centerY - height / 2;
+  const bottomY = centerY + height / 2;
+  const bodyGradient = viewerCtx.createLinearGradient(x - width, topY, x + width, bottomY);
+  bodyGradient.addColorStop(0, palette.light);
+  bodyGradient.addColorStop(0.45, palette.mid);
+  bodyGradient.addColorStop(1, palette.dark);
+
+  viewerCtx.save();
+  viewerCtx.translate(x, centerY);
+  viewerCtx.rotate(tilt + Math.sin(time * 0.8 + x * 0.015) * 0.02);
+  viewerCtx.shadowColor = "rgba(23, 39, 54, 0.18)";
+  viewerCtx.shadowBlur = 14;
+  viewerCtx.shadowOffsetY = 7;
+  viewerCtx.fillStyle = bodyGradient;
+  viewerCtx.strokeStyle = palette.outline;
+  viewerCtx.lineWidth = 1.6;
+
+  for (let helix = -1; helix <= 1; helix += 1) {
+    const helixX = helix * (width * 0.34);
+    viewerCtx.beginPath();
+    viewerCtx.roundRect(helixX - width * 0.2, -height / 2, width * 0.4, height, width * 0.22);
+    viewerCtx.fill();
+    viewerCtx.stroke();
+  }
+
+  viewerCtx.shadowBlur = 0;
+  viewerCtx.strokeStyle = "rgba(255,255,255,0.36)";
+  viewerCtx.lineWidth = 1;
+  viewerCtx.beginPath();
+  viewerCtx.moveTo(-width * 0.5, -height * 0.34);
+  viewerCtx.quadraticCurveTo(0, -height * 0.46, width * 0.45, -height * 0.3);
+  viewerCtx.moveTo(-width * 0.46, 0);
+  viewerCtx.quadraticCurveTo(0, -height * 0.08, width * 0.42, 0.04 * height);
+  viewerCtx.stroke();
+
+  viewerCtx.fillStyle = palette.cap;
+  viewerCtx.beginPath();
+  viewerCtx.ellipse(0, -height / 2 - 10, width * 0.65, 8, 0, 0, Math.PI * 2);
+  viewerCtx.fill();
+  viewerCtx.beginPath();
+  viewerCtx.ellipse(0, height / 2 + 10, width * 0.58, 7, 0, 0, Math.PI * 2);
+  viewerCtx.fill();
+  viewerCtx.restore();
+}
+
+function drawCholesterolGlyph(x, centerY, scale, time) {
+  const wobble = Math.sin(time * 0.9 + x * 0.03) * 1.5;
+  viewerCtx.save();
+  viewerCtx.translate(x, centerY + wobble);
+  viewerCtx.rotate(0.16 + Math.sin(time * 0.4 + x * 0.01) * 0.04);
+  viewerCtx.strokeStyle = "rgba(123, 93, 36, 0.82)";
+  viewerCtx.lineWidth = 1.5;
+  viewerCtx.fillStyle = "rgba(224, 189, 96, 0.9)";
+
+  const ringOffsets = [
+    { x: -10 * scale, y: -4 * scale },
+    { x: -2 * scale, y: 1 * scale },
+    { x: 7 * scale, y: -3 * scale },
+    { x: 13 * scale, y: 6 * scale }
+  ];
+
+  ringOffsets.forEach((offset, index) => {
+    viewerCtx.beginPath();
+    viewerCtx.arc(offset.x, offset.y, (index === 3 ? 4.5 : 5.6) * scale, 0, Math.PI * 2);
+    viewerCtx.fill();
+    viewerCtx.stroke();
+  });
+
+  viewerCtx.beginPath();
+  viewerCtx.moveTo(-15 * scale, -8 * scale);
+  viewerCtx.lineTo(-22 * scale, -15 * scale);
+  viewerCtx.moveTo(18 * scale, 10 * scale);
+  viewerCtx.lineTo(24 * scale, 19 * scale);
+  viewerCtx.stroke();
+  viewerCtx.restore();
+}
+
+function drawMembraneMicroFeatures(centerX, centerY, width, time) {
+  const proteinPalettes = [
+    {
+      light: "rgba(245, 221, 173, 0.96)",
+      mid: "rgba(205, 160, 84, 0.96)",
+      dark: "rgba(125, 82, 34, 0.96)",
+      outline: "rgba(116, 76, 34, 0.92)",
+      cap: "rgba(248, 236, 203, 0.92)"
+    },
+    {
+      light: "rgba(227, 214, 255, 0.96)",
+      mid: "rgba(142, 119, 204, 0.96)",
+      dark: "rgba(75, 60, 136, 0.96)",
+      outline: "rgba(70, 58, 123, 0.92)",
+      cap: "rgba(239, 233, 255, 0.92)"
+    }
+  ];
+
+  const proteinPositions = [
+    centerX - width * 0.26,
+    centerX + width * 0.18
+  ];
+
+  proteinPositions.forEach((x, index) => {
+    drawMembraneProtein(
+      x,
+      centerY,
+      78 + index * 6,
+      28 + index * 3,
+      index === 0 ? -0.08 : 0.06,
+      time,
+      proteinPalettes[index % proteinPalettes.length]
+    );
+  });
+
+  const cholesterolPositions = [
+    centerX - width * 0.11,
+    centerX + width * 0.02,
+    centerX + width * 0.31
+  ];
+
+  cholesterolPositions.forEach((x, index) => {
+    drawCholesterolGlyph(x, centerY + (index % 2 === 0 ? -2 : 6), 0.95 - index * 0.08, time + index * 0.4);
+  });
 }
 
 function drawOrientationAxes(width, height) {
@@ -505,21 +905,7 @@ function renderTarget(width, height, time) {
   viewerCtx.shadowBlur = 22;
   viewerCtx.shadowOffsetY = 10;
   if (state.component === "membrane") {
-    const membraneGradient = viewerCtx.createLinearGradient(centerX, centerY - 24, centerX, centerY + 30);
-    membraneGradient.addColorStop(0, "rgba(199, 232, 239, 0.92)");
-    membraneGradient.addColorStop(0.5, component.color);
-    membraneGradient.addColorStop(1, "rgba(90, 141, 160, 0.96)");
-    viewerCtx.fillStyle = membraneGradient;
-    viewerCtx.strokeStyle = "rgba(55, 108, 125, 0.88)";
-    viewerCtx.beginPath();
-    viewerCtx.roundRect(centerX - 184, centerY - 22, 368, 46, 18);
-    viewerCtx.fill();
-    viewerCtx.stroke();
-    viewerCtx.strokeStyle = "rgba(255,255,255,0.45)";
-    viewerCtx.beginPath();
-    viewerCtx.moveTo(centerX - 170, centerY - 6);
-    viewerCtx.lineTo(centerX + 170, centerY - 6);
-    viewerCtx.stroke();
+    drawPhospholipidBilayer(centerX, centerY, 376, time);
   } else if (state.component === "receptor") {
     for (let index = 0; index < 5; index += 1) {
       const x = centerX - 130 + index * 65;
@@ -624,13 +1010,32 @@ function renderViewerFrame(timeMs) {
   const time = timeMs * 0.001;
   renderTarget(width, height, time);
   const metrics = getModelMetrics();
-  const transformed = generateProteinGeometry(time)
-    .map((point) => ({ ...point, ...projectPoint(rotatePoint(point, yaw + time * 0.12, pitch), width, height) }))
+  const proteinPoints = generateProteinGeometry(time);
+  const rGroupGeometry = buildRGroupGeometry(proteinPoints, time);
+  const transformedOrdered = proteinPoints.map((point) => {
+    const rotated = rotatePoint(point, yaw + time * 0.12, pitch);
+    return { ...point, ...projectPoint(rotated, width, height) };
+  });
+  const transformed = transformedOrdered.slice().sort((a, b) => a.depth - b.depth);
+  const transformedAtoms = rGroupGeometry.atoms
+    .map((atom) => ({ ...atom, ...projectPoint(rotatePoint(atom, yaw + time * 0.12, pitch), width, height) }))
     .sort((a, b) => a.depth - b.depth);
-  const hotspotStartIndex = residueToSegmentIndex(hotspotRange[0], transformed.length);
-  const hotspotEndIndex = residueToSegmentIndex(hotspotRange[1], transformed.length);
-  const hotspotMidIndex = residueToSegmentIndex(Math.round((hotspotRange[0] + hotspotRange[1]) / 2), transformed.length);
-  const tailIndex = residueToSegmentIndex(tailRange[1], transformed.length);
+  const transformedBonds = rGroupGeometry.bonds
+    .map((bond) => {
+      const rotatedStart = rotatePoint(bond.start, yaw + time * 0.12, pitch);
+      const rotatedEnd = rotatePoint(bond.end, yaw + time * 0.12, pitch);
+      return {
+        color: bond.color,
+        start: { ...rotatedStart, ...projectPoint(rotatedStart, width, height) },
+        end: { ...rotatedEnd, ...projectPoint(rotatedEnd, width, height) },
+        depth: (rotatedStart.z + rotatedEnd.z) / 2
+      };
+    })
+    .sort((a, b) => a.depth - b.depth);
+  const hotspotStartIndex = residueToSegmentIndex(hotspotRange[0], transformedOrdered.length);
+  const hotspotEndIndex = residueToSegmentIndex(hotspotRange[1], transformedOrdered.length);
+  const hotspotMidIndex = residueToSegmentIndex(Math.round((hotspotRange[0] + hotspotRange[1]) / 2), transformedOrdered.length);
+  const tailIndex = residueToSegmentIndex(tailRange[1], transformedOrdered.length);
 
   viewerCtx.save();
   viewerCtx.lineCap = "round";
@@ -638,32 +1043,64 @@ function renderViewerFrame(timeMs) {
   viewerCtx.shadowColor = "rgba(22, 36, 46, 0.16)";
   viewerCtx.shadowBlur = 20;
   viewerCtx.shadowOffsetY = 12;
-  viewerCtx.strokeStyle = `rgba(255, 255, 255, ${0.45 + metrics.exposure / 240})`;
-  viewerCtx.lineWidth = 22;
-  viewerCtx.beginPath();
-  viewerCtx.moveTo(transformed[0].x, transformed[0].y);
-  for (let index = 1; index < transformed.length - 1; index += 1) {
-    const current = transformed[index];
-    const next = transformed[index + 1];
-    viewerCtx.quadraticCurveTo(current.x, current.y, (current.x + next.x) / 2, (current.y + next.y) / 2);
-  }
+  viewerCtx.strokeStyle = `rgba(255, 255, 255, ${0.42 + metrics.exposure / 260})`;
+  viewerCtx.lineWidth = 24;
+  drawChainPath(transformedOrdered);
   viewerCtx.stroke();
 
-  const ribbonGradient = viewerCtx.createLinearGradient(transformed[0].x, transformed[0].y, transformed[transformed.length - 1].x, transformed[transformed.length - 1].y);
+  const ribbonGradient = viewerCtx.createLinearGradient(
+    transformedOrdered[0].x,
+    transformedOrdered[0].y,
+    transformedOrdered[transformedOrdered.length - 1].x,
+    transformedOrdered[transformedOrdered.length - 1].y
+  );
   ribbonGradient.addColorStop(0, "rgba(31, 87, 187, 0.86)");
   ribbonGradient.addColorStop(0.55, "rgba(90, 169, 205, 0.88)");
   ribbonGradient.addColorStop(1, "rgba(214, 155, 45, 0.9)");
   viewerCtx.strokeStyle = ribbonGradient;
-  viewerCtx.lineWidth = 14;
+  viewerCtx.lineWidth = 15;
+  drawChainPath(transformedOrdered);
+  viewerCtx.stroke();
+
+  viewerCtx.strokeStyle = "rgba(255,255,255,0.22)";
+  viewerCtx.lineWidth = 5;
   viewerCtx.beginPath();
-  viewerCtx.moveTo(transformed[0].x, transformed[0].y);
-  for (let index = 1; index < transformed.length - 1; index += 1) {
-    const current = transformed[index];
-    const next = transformed[index + 1];
-    viewerCtx.quadraticCurveTo(current.x, current.y, (current.x + next.x) / 2, (current.y + next.y) / 2);
+  viewerCtx.moveTo(transformedOrdered[0].x - 2, transformedOrdered[0].y - 3);
+  for (let index = 1; index < transformedOrdered.length - 1; index += 1) {
+    const current = transformedOrdered[index];
+    const next = transformedOrdered[index + 1];
+    viewerCtx.quadraticCurveTo(current.x - 2, current.y - 3, (current.x + next.x) / 2 - 1, (current.y + next.y) / 2 - 3);
   }
   viewerCtx.stroke();
+
+  transformedBonds.forEach((bond) => {
+    const bondGradient = viewerCtx.createLinearGradient(bond.start.x, bond.start.y, bond.end.x, bond.end.y);
+    bondGradient.addColorStop(0, "rgba(255,255,255,0.72)");
+    bondGradient.addColorStop(1, bond.color);
+    viewerCtx.strokeStyle = bondGradient;
+    viewerCtx.globalAlpha = clamp(0.45 + ((bond.start.scale + bond.end.scale) / 2) * 0.55, 0.45, 1);
+    viewerCtx.lineWidth = clamp(1.2 + ((bond.start.scale + bond.end.scale) / 2) * 2.8, 1.2, 4.8);
+    viewerCtx.beginPath();
+    viewerCtx.moveTo(bond.start.x, bond.start.y);
+    viewerCtx.lineTo(bond.end.x, bond.end.y);
+    viewerCtx.stroke();
+  });
+
+  transformedAtoms.forEach((atom) => {
+    const radius = Math.max(1.8, atom.radius * 12 * atom.scale);
+    const glow = viewerCtx.createRadialGradient(atom.x - radius * 0.4, atom.y - radius * 0.45, 1, atom.x, atom.y, radius);
+    glow.addColorStop(0, "rgba(255,255,255,0.96)");
+    glow.addColorStop(0.42, atom.color);
+    glow.addColorStop(1, mixColor(atom.color, "#17313b", 0.45));
+    viewerCtx.globalAlpha = clamp(0.48 + atom.scale * 0.58, 0.48, 1);
+    viewerCtx.fillStyle = glow;
+    viewerCtx.beginPath();
+    viewerCtx.arc(atom.x, atom.y, radius, 0, Math.PI * 2);
+    viewerCtx.fill();
+  });
+
   viewerCtx.shadowBlur = 0;
+  viewerCtx.globalAlpha = 1;
 
   transformed.forEach((point, index) => {
     const isAnchor =
@@ -675,11 +1112,12 @@ function renderViewerFrame(timeMs) {
     if (!isAnchor) {
       return;
     }
-    const radius = 7 + point.radius * 16;
+    const radius = Math.max(6, (7 + point.radius * 16) * point.scale);
     const beadGradient = viewerCtx.createRadialGradient(point.x - radius * 0.4, point.y - radius * 0.45, 2, point.x, point.y, radius);
     beadGradient.addColorStop(0, "rgba(255,255,255,0.95)");
     beadGradient.addColorStop(0.3, point.color);
     beadGradient.addColorStop(1, "rgba(15, 34, 57, 0.92)");
+    viewerCtx.globalAlpha = clamp(0.5 + point.scale * 0.5, 0.5, 1);
     viewerCtx.fillStyle = beadGradient;
     viewerCtx.beginPath();
     viewerCtx.arc(point.x, point.y, radius, 0, Math.PI * 2);
@@ -690,22 +1128,26 @@ function renderViewerFrame(timeMs) {
     viewerCtx.arc(point.x - 1, point.y - 1, radius * 0.82, Math.PI * 1.1, Math.PI * 1.85);
     viewerCtx.stroke();
   });
+  viewerCtx.globalAlpha = 1;
 
-  const contactShadow = viewerCtx.createRadialGradient(width * 0.5, height * 0.78, 20, width * 0.5, height * 0.83, width * 0.22);
+  const contactShadow = viewerCtx.createRadialGradient(width * 0.5, height * 0.76, 20, width * 0.5, height * 0.84, width * 0.24);
   contactShadow.addColorStop(0, "rgba(62, 109, 121, 0.18)");
   contactShadow.addColorStop(1, "rgba(62, 109, 121, 0)");
   viewerCtx.fillStyle = contactShadow;
   viewerCtx.beginPath();
-  viewerCtx.ellipse(width * 0.5, height * 0.8, width * 0.18, height * 0.04, 0, 0, Math.PI * 2);
+  viewerCtx.ellipse(width * 0.5, height * 0.8, width * 0.21, height * 0.05, 0, 0, Math.PI * 2);
   viewerCtx.fill();
-  drawLabel(transformed[hotspotMidIndex].x + 14, transformed[hotspotMidIndex].y - 10, protein.hotspotLabel, "#d69b2d");
-  drawLabel(transformed[tailIndex].x - 120, transformed[tailIndex].y - 8, protein.tailLabel, "#cb6b63");
+  drawLabel(transformedOrdered[hotspotMidIndex].x + 14, transformedOrdered[hotspotMidIndex].y - 10, protein.hotspotLabel, "#d69b2d");
+  drawLabel(transformedOrdered[tailIndex].x - 120, transformedOrdered[tailIndex].y - 8, protein.tailLabel, "#cb6b63");
   drawLabel(width * 0.5 + 18, height * 0.73 - 12, componentProfiles[state.component].label, componentProfiles[state.component].color);
   viewerCtx.restore();
   frameId = requestAnimationFrame(renderViewerFrame);
 }
 
 function updateView() {
+  if (refs.rGroupToggle) {
+    refs.rGroupToggle.checked = state.showRGroups;
+  }
   refs.pathogenicityValue.textContent = state.pathogenicity;
   refs.stressValue.textContent = state.stress;
   refs.vulnerabilityValue.textContent = state.vulnerability;
@@ -716,6 +1158,7 @@ function updateView() {
   renderTimeline(metrics);
   renderAnnotations(metrics);
   drawContactMap(metrics);
+  updateViewerCaption();
 }
 
 function updateActiveConfig(nextConfig) {
@@ -779,6 +1222,12 @@ function attachEvents() {
     state.component = event.target.value;
     updateView();
   });
+  if (refs.rGroupToggle) {
+    refs.rGroupToggle.addEventListener("change", (event) => {
+      state.showRGroups = event.target.checked;
+      updateView();
+    });
+  }
   [["pathogenicityRange", "pathogenicity"], ["stressRange", "stress"], ["vulnerabilityRange", "vulnerability"], ["densityRange", "density"]].forEach(([id, key]) => {
     refs[id].addEventListener("input", (event) => {
       state[key] = Number(event.target.value);
@@ -793,8 +1242,12 @@ function attachEvents() {
     refs.stressRange.value = state.stress;
     refs.vulnerabilityRange.value = state.vulnerability;
     refs.densityRange.value = state.density;
+    if (refs.rGroupToggle) {
+      refs.rGroupToggle.checked = state.showRGroups;
+    }
     yaw = 0.45;
     pitch = -0.2;
+    roll = 0;
     updateActiveConfig(window.PROTEIN_SIM_CONFIG || fallbackConfig);
     setImportStatus(`Reset to default profile: ${(window.PROTEIN_SIM_CONFIG || fallbackConfig).protein.displayName}.`);
   });

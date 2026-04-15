@@ -34,3 +34,10 @@ The page accepts:
 ## Notes
 
 This simulator is educational and conceptual. It is not a molecular dynamics or clinically validated prediction tool.
+
+- The 3D viewer now includes an optional `Show R-group balls` toggle for approximate ball-and-stick sidechain rendering.
+- The sidechains are heuristic educational geometry, not atomically exact coordinates from PDB, NMR, cryo-EM, or molecular dynamics data.
+- The protein viewer uses enhanced depth cues, including perspective scaling, layered highlights, and stronger occlusion, to make the 3D pose easier to read.
+- The plasma membrane target now renders as a stylized phospholipid bilayer instead of a single rounded bar.
+- The membrane scene also includes embedded transmembrane proteins and cholesterol-like sterols to make the bilayer feel more biologically recognizable.
+- The viewer now supports free 360-degree orbiting, and holding `Shift` while dragging rolls the protein for harder-to-reach orientations.

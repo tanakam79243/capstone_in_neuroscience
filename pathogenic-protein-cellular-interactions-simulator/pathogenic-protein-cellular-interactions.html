@@ -132,11 +132,20 @@
             <h2>3D Interaction Viewer</h2>
             <span class="badge">Drag to orbit</span>
           </div>
+          <div class="viewer-toolbar">
+            <label class="toggle-chip" for="rGroupToggle">
+              <input id="rGroupToggle" type="checkbox" checked />
+              Show R-group balls
+            </label>
+          </div>
           <div id="viewer3d" class="viewer3d" aria-label="3D protein viewer"></div>
           <p class="viewer-caption">
-            Blue to amber shading marks increasing disorder and exposure. The highlighted target object changes with the selected cellular component.
+            Blue to amber shading marks increasing disorder and exposure. The highlighted target object changes with the selected cellular component, and the optional ball-and-stick sidechains approximate amino-acid R-groups.
           </p>
           <p class="speed-note" id="speedNote"></p>
+          <p class="viewer-caption">
+            Drag to orbit freely through 360 degrees. Hold `Shift` while dragging to roll the protein and inspect orientations that were previously hard to reach.
+          </p>
           <div id="annotationGrid" class="annotation-grid"></div>
         </section>
 
