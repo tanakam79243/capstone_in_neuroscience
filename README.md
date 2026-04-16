@@ -15,7 +15,7 @@ The user is given a default pathogenic amyloid protein to view its interactions 
 
 2. Pathogenic_Amino_Acid_Simulator
 
-The usefr is able to manipulate the amino acid sequence of a pathogenic protein. Using AI, the user can experiment with different amino acid sequences to see the conformational changes of the protein.
+The user is able to manipulate the amino acid sequence of a pathogenic protein. Using AI, the user can experiment with different amino acid sequences to see the conformational changes of the protein.
 
 ________________________________________________________________
 ### The Miscellaneous Files
