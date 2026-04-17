@@ -1,5 +1,5 @@
 # Capstone In Neuroscience Overview Directory 
-Repository to store coding-related tasks, files, and data
+Repository to store coding-related tasks/assignments, files, and data
 
 The following repository contains select assingments 
 
